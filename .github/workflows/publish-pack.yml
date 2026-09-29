@@ -69,7 +69,7 @@ jobs:
             test "$release_is_draft" = true
             gh release upload "$tag" "$asset" --repo "$GITHUB_REPOSITORY"
           done
-          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag" --jq '{assets: [.assets[] | {name, size, digest}]}' > dist/remote-assets.json
+          gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json assets --jq '{assets: [.assets[] | {name, size, digest}]}' > dist/remote-assets.json
           node scripts/verify-release-assets.mjs dist/release-assets dist/remote-assets.json
       - name: Publish release and advance channel
         shell: bash
