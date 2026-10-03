@@ -1,8 +1,29 @@
-# NCreate edition manifests
+<div align="center">
+  <h1>NCreate edition manifests</h1>
+  <p>Schema, validation, and publication tooling for proposed Minimal, Standard, and Ultra editions.</p>
+  <p>
+    <a href="https://github.com/Yozekkk/ncreate-manifests/actions/workflows/check.yml"><img src="https://github.com/Yozekkk/ncreate-manifests/actions/workflows/check.yml/badge.svg" alt="Validate manifests"></a>
+    <img src="https://img.shields.io/badge/Node.js-22-339933" alt="Node.js 22 in CI">
+    <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPLv3-555" alt="GPLv3 license"></a>
+  </p>
+</div>
 
-This repository is the publication point for the official NCreate Minimal, Standard, and Ultra editions. It contains the [version 1 JSON schema](schema/official-edition-v1.schema.json), a release builder, checks, and an automated publishing workflow. **No official edition has been released yet.** Files under `tests/fixtures/` are synthetic test data and are never published as packs.
+This repository contains the publication pipeline for proposed NCreate Minimal, Standard, and Ultra editions: a [version 1 JSON schema](schema/official-edition-v1.schema.json), release builder, validation scripts, tests, and GitHub Actions. **No edition from this repository has been released or activated.** Files under `tests/fixtures/` are synthetic test data and are never published as packs.
 
-The launcher reads `https://raw.githubusercontent.com/Yozekkk/ncreate-manifests/main/channels/{stable|beta}/{minimal|standard|ultra}.json`. The six channel JSON files are intentionally absent until a real pack is published. HTTP 404 means that edition is not available. An empty or sample manifest would incorrectly advertise an installable edition.
+The six potential `channels/{stable|beta}/{minimal|standard|ultra}.json` pointers are absent until reviewed packs are published. HTTP 404 means that an edition is unavailable; a sample manifest would incorrectly advertise an installable edition. **The current [NCreate Launcher](https://github.com/Yozekkk/ncreate-launcher) does not consume these pointers.** Its published NCreate Server edition currently comes from [ncreate-pack](https://github.com/Yozekkk/ncreate-pack). Before activating this pipeline for users, maintainers must integrate its channels into the launcher and test that integration.
+
+## Repository map
+
+```text
+schema/               JSON Schema for the v1 wire format
+packs/                Location for reviewed edition source directories
+channels/             Stable and beta pointers after publication
+scripts/              Build, validate, verify release, activate channel
+tests/                Publisher tests and synthetic pack fixtures
+.github/workflows/     Validation and manual publication workflows
+```
+
+The repository uses Node.js scripts, npm, AJV, and JSON Schema. There is no desktop application or development server here.
 
 ## Manifest and release format
 
@@ -10,7 +31,20 @@ Each published channel JSON is a complete v1 manifest. `schemaVersion`, edition 
 
 The schema describes the wire format; it does **not** prove that files are licensed, compatible, malware-free, or an official finished pack. Review content and redistribution rights before adding it. A SHA-256 digest detects changes to a specific file; it does not establish who supplied that file. The published channel pointer and release assets remain under control of this repository's maintainers.
 
-## Publishing a real pack
+## Local validation
+
+CI runs on Node.js 22. Install the locked dependencies and run the same checks locally:
+
+```bash
+git clone https://github.com/Yozekkk/ncreate-manifests.git
+cd ncreate-manifests
+npm ci --ignore-scripts
+npm run check
+```
+
+`npm run check` runs the Node.js test suite and validates any published channel files. `npm test` runs only the tests. With no channel JSON files, validation reports zero published manifests; that is the expected current state.
+
+## Publishing a reviewed pack
 
 Only maintainers should add a reviewed pack under `packs/<edition>/<version>/`:
 
@@ -32,6 +66,10 @@ packs/standard/1.0.0/
 
 The versioned download URLs have the form `https://github.com/Yozekkk/ncreate-manifests/releases/download/pack-<edition>-<channel>-v<version>/file-<sha256-of-relative-path>.<extension>`. The manifest stores the SHA-256 of the **file contents**, not the digest in the asset name. `SHA256SUMS.txt` also includes the generated manifest and can be checked after downloading all release assets with `sha256sum -c SHA256SUMS.txt`.
 
-If a workflow fails before the channel commit, the channel remains on its prior version. A draft or published release may need maintainer inspection before retrying; do not edit an already published version in place. A failed push after the release is published leaves that release available by tag but undiscoverable to the launcher until the channel is advanced.
+If a workflow fails before the channel commit, the channel remains on its prior version. A draft or published release may need maintainer inspection before retrying; do not edit an already published version in place. A failed push after the release is published leaves that release available by tag but undiscoverable through the channel pointer until it is advanced.
 
-See [the launcher update documentation](https://github.com/Yozekkk/ncreate-launcher/blob/main/docs/UPDATES.md) for the client behavior and channel URLs.
+The workflow in [.github/workflows/publish-pack.yml](.github/workflows/publish-pack.yml) implements this sequence. [Launcher update documentation](https://github.com/Yozekkk/ncreate-launcher/blob/main/docs/UPDATES.md) describes the **currently integrated** NCreate Server channel in `ncreate-pack`, not this inactive edition pipeline.
+
+## License
+
+The repository is distributed under [GPLv3](LICENSE). The fixture files are tests, not a downloadable Minecraft edition.
